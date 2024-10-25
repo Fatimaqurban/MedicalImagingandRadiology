@@ -8,9 +8,6 @@ from tensorflow.keras.applications import MobileNetV2, ResNet50, InceptionV3
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from sklearn.utils import class_weight
-import numpy as np
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a strong secret key
@@ -139,19 +136,6 @@ def select_model(dataset):
             subset='validation'
         )
 
-        # Print Class Indices
-        print("Class Indices:", train_generator.class_indices)
-
-        # Calculate Class Weights
-        train_labels = train_generator.classes
-        class_weights = class_weight.compute_class_weight(
-            class_weight='balanced',
-            classes=np.unique(train_labels),
-            y=train_labels
-        )
-        class_weights = dict(zip(np.unique(train_labels), class_weights))
-        print("Class Weights:", class_weights)
-
         # Build the Model
         base_model_class = AVAILABLE_MODELS[selected_model]
         base_model = base_model_class(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
@@ -163,38 +147,26 @@ def select_model(dataset):
         model = Model(inputs=base_model.input, outputs=predictions)
 
         # Freeze base model layers
-        for layer in base_model.layers[:-10]:  # Unfreeze last 10 layers
+        for layer in base_model.layers:
             layer.trainable = False
-        for layer in base_model.layers[-10:]:
-            layer.trainable = True
 
         # Compile the Model
-        model.compile(optimizer=Adam(learning_rate=1e-4), loss='binary_crossentropy', metrics=['accuracy'])
-
-        # Save the Model Path
-        model_filename = f"{dataset}_{selected_model}.h5"
-        model_save_path = os.path.join(MODEL_FOLDER, model_filename)
-
-        # Define Callbacks
-        callbacks = [
-            EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True),
-            ModelCheckpoint(filepath=model_save_path, save_best_only=True)
-        ]
+        model.compile(optimizer=Adam(), loss='binary_crossentropy', metrics=['accuracy'])
 
         # Train the Model
         try:
             model.fit(
                 train_generator,
-                epochs=50,
-                validation_data=validation_generator,
-                class_weight=class_weights,
-                callbacks=callbacks
+                epochs=2,
+                validation_data=validation_generator
             )
         except Exception as e:
             flash(f'Error during training: {str(e)}')
             return redirect(request.url)
 
-        # Save the Model (Redundant due to ModelCheckpoint, but kept for compatibility)
+        # Save the Model
+        model_filename = f"{dataset}_{selected_model}.h5"
+        model_save_path = os.path.join(MODEL_FOLDER, model_filename)
         model.save(model_save_path)
 
         flash(f'Model {selected_model} trained and saved successfully!')
@@ -243,16 +215,14 @@ def test_model(dataset, model_name):
             # Make Prediction
             try:
                 prediction = model.predict(img_array)
-                probability = prediction[0][0]
-                print("Prediction Probability:", probability)
-                disease_present = probability > 0.5  # Adjust threshold if necessary
+                disease_present = prediction[0][0] > 0.5
                 result = 'Disease Present' if disease_present else 'Disease Absent'
-                flash(f'Prediction Probability: {probability:.4f}')
-                flash(f'Prediction Result: {result}')
-                return redirect(request.url)
             except Exception as e:
                 flash(f'Error during prediction: {str(e)}')
                 return redirect(request.url)
+
+            flash(f'Prediction Result: {result}')
+            return redirect(request.url)
         else:
             flash('Allowed image types are png, jpg, jpeg.')
             return redirect(request.url)
