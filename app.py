@@ -53,9 +53,10 @@ def validate_folder_structure(extracted_path):
     if len(items) != 1:
         print("Validation Failed: Zip should contain exactly one root folder.")
         return False
-    dataset_folder = os.path.join(extracted_path, items[0])
+    dataset_folder_name = items[0]
+    dataset_folder = os.path.join(extracted_path, dataset_folder_name)
     if not os.path.isdir(dataset_folder):
-        print(f"Validation Failed: {items[0]} is not a directory.")
+        print(f"Validation Failed: {dataset_folder_name} is not a directory.")
         return False
     class_folders = os.listdir(dataset_folder)
     print("Class folders found:", class_folders)  # Debug print
@@ -115,22 +116,26 @@ def upload_file():
                 print("Error: Invalid folder structure.")
                 return redirect(request.url)
 
+            # Get dataset folder name
+            dataset_folder_name = os.listdir(extract_path)[0]
+            # Save dataset_folder_name in session or pass it along
+            dataset_name = dataset_folder_name  # This will be passed to the next route
+
             # Check class distribution
-            dataset_name = os.listdir(extract_path)[0]
-            dataset_dir = os.path.join(extract_path, dataset_name)
+            dataset_dir = os.path.join(extract_path, dataset_folder_name)
             distribution = check_class_distribution(dataset_dir)
             print("Class Distribution:", distribution)
             flash(f'Class Distribution: {distribution}')
 
             flash('File successfully uploaded and extracted.')
-            return redirect(url_for('select_model', dataset=dataset_name))
+            return redirect(url_for('select_model', dataset_folder_name=dataset_folder_name, extract_folder_name=filename.rsplit('.', 1)[0]))
         else:
             flash('Allowed file type is zip.')
             return redirect(request.url)
     return render_template('index.html')
 
-@app.route('/select_model/<dataset>', methods=['GET', 'POST'])
-def select_model(dataset):
+@app.route('/select_model/<extract_folder_name>/<dataset_folder_name>', methods=['GET', 'POST'])
+def select_model(extract_folder_name, dataset_folder_name):
     """Allow the user to select a model and initiate training."""
     if request.method == 'POST':
         selected_model = request.form.get('model')
@@ -138,10 +143,10 @@ def select_model(dataset):
             flash('Invalid model selected.')
             print("Error: Invalid model selected.")
             return redirect(request.url)
-        
+
         # Path to dataset folder
-        dataset_dir = os.path.join(EXTRACT_FOLDER, dataset)
-        
+        dataset_dir = os.path.join(EXTRACT_FOLDER, extract_folder_name, dataset_folder_name)
+
         # Data Generators with Validation Split
         train_datagen = ImageDataGenerator(
             rescale=1./255,
@@ -214,24 +219,24 @@ def select_model(dataset):
             return redirect(request.url)
 
         # Save the Model
-        model_filename = f"{dataset}_{selected_model}.h5"
+        model_filename = f"{dataset_folder_name}_{selected_model}.h5"
         model_save_path = os.path.join(MODEL_FOLDER, model_filename)
         model.save(model_save_path)
         print(f"Model saved to {model_save_path}")
 
         # Save class indices
         class_indices = train_generator.class_indices
-        with open(os.path.join(MODEL_FOLDER, f"{dataset}_{selected_model}_class_indices.json"), 'w') as f:
+        with open(os.path.join(MODEL_FOLDER, f"{dataset_folder_name}_{selected_model}_class_indices.json"), 'w') as f:
             json.dump(class_indices, f)
-        print(f"Class indices saved to {os.path.join(MODEL_FOLDER, f'{dataset}_{selected_model}_class_indices.json')}")
+        print(f"Class indices saved to {os.path.join(MODEL_FOLDER, f'{dataset_folder_name}_{selected_model}_class_indices.json')}")
 
         flash(f'Model {selected_model} trained and saved successfully!')
-        return redirect(url_for('test_model', dataset=dataset, model_name=selected_model))
+        return redirect(url_for('test_model', dataset_folder_name=dataset_folder_name, model_name=selected_model))
+    else:
+        return render_template('select_model.html', models=AVAILABLE_MODELS.keys(), dataset=dataset_folder_name)
 
-    return render_template('select_model.html', models=AVAILABLE_MODELS.keys(), dataset=dataset)
-
-@app.route('/test_model/<dataset>/<model_name>', methods=['GET', 'POST'])
-def test_model(dataset, model_name):
+@app.route('/test_model/<dataset_folder_name>/<model_name>', methods=['GET', 'POST'])
+def test_model(dataset_folder_name, model_name):
     """Allow the user to upload a test image and get a prediction."""
     if request.method == 'POST':
         if 'file' not in request.files:
@@ -248,7 +253,7 @@ def test_model(dataset, model_name):
             print(f"Test image saved to {test_image_path}")
 
             # Load the Model
-            model_filename = f"{dataset}_{model_name}.h5"
+            model_filename = f"{dataset_folder_name}_{model_name}.h5"
             model_path = os.path.join(MODEL_FOLDER, model_filename)
             if not os.path.exists(model_path):
                 flash('Model file not found. Please train the model first.')
@@ -263,7 +268,7 @@ def test_model(dataset, model_name):
                 return redirect(request.url)
 
             # Load class indices
-            class_indices_path = os.path.join(MODEL_FOLDER, f"{dataset}_{model_name}_class_indices.json")
+            class_indices_path = os.path.join(MODEL_FOLDER, f"{dataset_folder_name}_{model_name}_class_indices.json")
             if not os.path.exists(class_indices_path):
                 flash('Class indices file not found.')
                 print("Error: Class indices file not found.")
@@ -291,7 +296,7 @@ def test_model(dataset, model_name):
                 prediction = model.predict(img_array)
                 probability = prediction[0][0]
                 # Determine class based on probability and class mapping
-                threshold = 0.3  # You can adjust this threshold if needed
+                threshold = 0.5  # You can adjust this threshold if needed
                 predicted_class = 1 if probability > threshold else 0
                 result = class_labels.get(predicted_class, "Unknown")
                 print(f"Prediction Probability: {probability:.4f}, Predicted Class: {result}")
@@ -316,7 +321,7 @@ def test_model(dataset, model_name):
         else:
             flash('Allowed image types are png, jpg, jpeg.')
             return redirect(request.url)
-    return render_template('test_model.html', dataset=dataset, model_name=model_name)
+    return render_template('test_model.html', dataset=dataset_folder_name, model_name=model_name)
 
 # Route to serve uploaded test images
 @app.route('/static/test_uploads/<filename>')
