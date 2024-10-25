@@ -5,7 +5,16 @@ This project implements a web-based application for training and testing deep le
 ## Project Structure
 
 The application is organized into the following directory structure:
-medical_imaging_app/ │ ├── app.py # Main Flask application file ├── templates/ # HTML templates for the web interface │ ├── index.html │ ├── select_model.html │ └── test_model.html ├── uploads/ # Directory for uploaded zip files ├── extracted/ # Directory for extracted datasets ├── models/ # Directory for trained model files └── test_uploads/ # Directory for uploaded test images
+medical_imaging_app/
+   ├── app.py # Main Flask application file 
+   ├── templates/ # HTML templates for the web interface
+      ├── index.html  
+      ├── select_model.html 
+      └── test_model.html 
+   ├── uploads/ # Directory for uploaded zip files 
+   ├── extracted/ # Directory for extracted datasets 
+   ├── models/ # Directory for trained model files 
+   └── test_uploads/ # Directory for uploaded test images
 
 
 ## Installation
@@ -21,10 +30,10 @@ Before you begin, ensure you have the following installed on your system:
 To set up the project, follow these steps:
 
 1. **Clone the Repository:**
-   git clone https://github.com/yourusername/medical-imaging-app.git
+   git clone https://github.com/Fatimaqurban/MedicalImagingandRadiology.git
    cd medical_imaging_app
 2. **Install Required Packages:**
-  pip install flask tensorflow werkzeug
+   pip install flask tensorflow werkzeug
 
 ## Usage
 Running the Application
