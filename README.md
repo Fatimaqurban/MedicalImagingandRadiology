@@ -68,8 +68,8 @@ This will start the Flask server, and the application will be accessible via htt
   Werkzeug - A comprehensive WSGI web application library.
 
 # Models being used in Application
-### MobileNetV2
-### ResNet50
-### InceptionV3
+1. MobileNetV2
+2. ResNet50
+3. InceptionV3
 
 
