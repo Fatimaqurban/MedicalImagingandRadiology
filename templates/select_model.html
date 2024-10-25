@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Select Model for Training</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 50px;
+      }
+      .container {
+        max-width: 500px;
+        margin: auto;
+      }
+      .messages {
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Select Model for Training</h1>
+      <p>Dataset: <strong>{{ dataset }}</strong></p>
+      {% with messages = get_flashed_messages() %} {% if messages %}
+      <div class="messages">
+        <ul>
+          {% for message in messages %}
+          <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %} {% endwith %}
+      <form method="post">
+        <label for="model">Choose a model:</label>
+        <select name="model" id="model" required>
+          {% for model in models %}
+          <option value="{{ model }}">{{ model }}</option>
+          {% endfor %}
+        </select>
+        <br /><br />
+        <input type="submit" value="Start Training" />
+      </form>
+    </div>
+  </body>
+</html>

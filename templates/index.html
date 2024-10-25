@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Medical Imaging App - Upload Dataset</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 50px;
+      }
+      .container {
+        max-width: 500px;
+        margin: auto;
+      }
+      .messages {
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Upload Dataset Zip File</h1>
+      <p>
+        Your zip file should contain a single dataset folder with class
+        subfolders. For example:
+      </p>
+      <pre>
+DatasetFolderName/
+    class1/
+        img1.jpg
+        img2.jpg
+        ...
+    class2/
+        img1.jpg
+        img2.jpg
+        ...
+      </pre>
+      {% with messages = get_flashed_messages() %} {% if messages %}
+      <div class="messages">
+        <ul>
+          {% for message in messages %}
+          <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %} {% endwith %}
+      <form method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".zip" required />
+        <br /><br />
+        <input type="submit" value="Upload" />
+      </form>
+    </div>
+  </body>
+</html>

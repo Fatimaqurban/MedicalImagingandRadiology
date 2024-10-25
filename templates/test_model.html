@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Test Trained Model</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 50px;
+      }
+      .container {
+        max-width: 500px;
+        margin: auto;
+      }
+      .messages {
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Test Your Image</h1>
+      <p>Dataset: <strong>{{ dataset }}</strong></p>
+      <p>Model: <strong>{{ model_name }}</strong></p>
+      {% with messages = get_flashed_messages() %} {% if messages %}
+      <div class="messages">
+        <ul>
+          {% for message in messages %}
+          <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %} {% endwith %}
+      <form method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".png, .jpg, .jpeg" required />
+        <br /><br />
+        <input type="submit" value="Predict" />
+      </form>
+    </div>
+  </body>
+</html>
