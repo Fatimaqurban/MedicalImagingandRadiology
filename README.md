@@ -61,4 +61,9 @@ This will start the Flask server, and the application will be accessible via htt
   TensorFlow - The machine learning framework used.
   Werkzeug - A comprehensive WSGI web application library.
 
+# Models being used in Application
+### MobileNetV2
+### ResNet50
+### InceptionV3
+
 
