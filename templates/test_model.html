@@ -8,11 +8,18 @@
         margin: 50px;
       }
       .container {
-        max-width: 500px;
+        max-width: 800px;
         margin: auto;
       }
       .messages {
         color: red;
+      }
+      .prediction {
+        margin-top: 20px;
+      }
+      .prediction img {
+        max-width: 100%;
+        height: auto;
       }
     </style>
   </head>
@@ -35,6 +42,25 @@
         <br /><br />
         <input type="submit" value="Predict" />
       </form>
+      {% if messages %}
+      <div class="prediction">
+        {% for message in messages %} {% if 'Prediction Probability' in message
+        or 'Prediction Result' in message %}
+        <p>{{ message }}</p>
+        {% endif %} {% endfor %}
+      </div>
+      {% endif %} {% if filename %}
+      <div class="prediction">
+        <h2>Uploaded Image:</h2>
+        <img
+          src="{{ url_for('uploaded_file', filename=filename) }}"
+          alt="Test Image"
+        />
+        <h2>Prediction Result:</h2>
+        <p><strong>Probability:</strong> {{ probability }}</p>
+        <p><strong>Result:</strong> {{ result }}</p>
+      </div>
+      {% endif %}
     </div>
   </body>
 </html>
