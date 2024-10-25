@@ -2,7 +2,7 @@
 
 This project implements a web-based application for training and testing deep learning models on medical imaging data. It allows users to upload a dataset, train a model, and test the model's predictions on new images.
 
-## Project Structure
+<!--## Project Structure
 
 The application is organized into the following directory structure:
 medical_imaging_app/
@@ -15,6 +15,7 @@ medical_imaging_app/
    ├── extracted/ # Directory for extracted datasets 
    ├── models/ # Directory for trained model files 
    └── test_uploads/ # Directory for uploaded test images
+   -->
 
 
 ## Installation
