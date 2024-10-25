@@ -47,14 +47,20 @@ This will start the Flask server, and the application will be accessible via htt
 1. **Upload Dataset:**
    Navigate to the home page (http://127.0.0.1:5000/).
    Use the upload form to upload a dataset zip file formatted as specified.
+   ![image](https://github.com/user-attachments/assets/0e7df06a-506e-479d-a7e1-736aba0a8982)
 
-2. **Train Model:**
+
+3. **Train Model:**
   After uploading the dataset, select a model for training.
   The application will train the model and redirect you to the testing page upon completion.
+  ![image](https://github.com/user-attachments/assets/9014a53d-269f-4eb6-8a44-06bf7b295ebd)
 
-3. **Test Model:**
+
+5. **Test Model:**
   On the testing page, upload an image to evaluate the trained model.
   The result will be displayed on the same page.
+  ![image](https://github.com/user-attachments/assets/f46fa9f0-674e-4641-8d7c-2ba2ddce6c9f)
+
 
 ## Built With
   Flask - The web framework used.
