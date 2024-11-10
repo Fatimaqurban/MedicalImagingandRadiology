@@ -134,6 +134,117 @@ def upload_file():
             return redirect(request.url)
     return render_template('index.html')
 
+# @app.route('/select_model/<extract_folder_name>/<dataset_folder_name>', methods=['GET', 'POST'])
+# def select_model(extract_folder_name, dataset_folder_name):
+#     """Allow the user to select a model and initiate training."""
+#     if request.method == 'POST':
+#         selected_model = request.form.get('model')
+#         if selected_model not in AVAILABLE_MODELS:
+#             flash('Invalid model selected.')
+#             print("Error: Invalid model selected.")
+#             return redirect(request.url)
+
+#         # Path to dataset folder
+#         dataset_dir = os.path.join(EXTRACT_FOLDER, extract_folder_name, dataset_folder_name)
+
+#         # Data Generators with Validation Split
+#         train_datagen = ImageDataGenerator(
+#             rescale=1./255,
+#             shear_range=0.2,
+#             zoom_range=0.2,
+#             horizontal_flip=True,
+#             validation_split=0.2  # 20% for validation
+#         )
+
+#         train_generator = train_datagen.flow_from_directory(
+#             dataset_dir,
+#             target_size=(224, 224),
+#             # batch_size=32,
+#             batch_size=8,
+#             # class_mode='binary',
+#             class_mode='categorical',
+#             subset='training'
+#         )
+
+#         num_classes = len(train_generator.class_indices)  # Define num_classes based on dataset
+
+#         validation_generator = train_datagen.flow_from_directory(
+#             dataset_dir,
+#             target_size=(224, 224),
+#             #batch_size=32,
+#             batch_size=8,
+#             # class_mode='binary',
+#             class_mode='categorical',
+#             subset='validation'
+#         )
+
+#         # Check class distribution
+#         distribution = check_class_distribution(dataset_dir)
+#         print("Training Class Distribution:", distribution)
+#         flash(f'Training Class Distribution: {distribution}')
+
+#         # Calculate class weights to handle imbalance
+#         classes = list(train_generator.class_indices.keys())
+#         class_weights_calculated = class_weight.compute_class_weight(
+#             'balanced',
+#             classes=np.unique(train_generator.classes),
+#             y=train_generator.classes
+#         )
+#         class_weights_dict = dict(enumerate(class_weights_calculated))
+#         print("Class Weights:", class_weights_dict)
+#         flash(f'Class Weights: {class_weights_dict}')
+
+#         # Build the Model
+#         base_model_class = AVAILABLE_MODELS[selected_model]
+#         base_model = base_model_class(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
+#         x = base_model.output
+#         x = GlobalAveragePooling2D()(x)
+#         x = Dense(1024, activation='relu')(x)
+#         # predictions = Dense(1, activation='sigmoid')(x)
+#         predictions = Dense(num_classes, activation='softmax')(x) 
+
+#         model = Model(inputs=base_model.input, outputs=predictions)
+
+#         # Freeze base model layers
+#         for layer in base_model.layers:
+#             layer.trainable = False
+
+#         # Compile the Model
+#         # model.compile(optimizer=Adam(), loss='binary_crossentropy', metrics=['accuracy'])
+#         model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['accuracy'])
+
+
+#         # Train the Model
+#         try:
+#             model.fit(
+#                 train_generator,
+#                 epochs=2,
+#                 validation_data=validation_generator,
+#                 class_weight=class_weights_dict
+#             )
+#         except Exception as e:
+#             flash(f'Error during training: {str(e)}')
+#             print(f"Error during training: {str(e)}")
+#             return redirect(request.url)
+
+#         # Save the Model
+#         model_filename = f"{dataset_folder_name}_{selected_model}.h5"
+#         model_save_path = os.path.join(MODEL_FOLDER, model_filename)
+#         model.save(model_save_path)
+#         print(f"Model saved to {model_save_path}")
+
+#         # Save class indices
+#         class_indices = train_generator.class_indices
+#         with open(os.path.join(MODEL_FOLDER, f"{dataset_folder_name}_{selected_model}_class_indices.json"), 'w') as f:
+#             json.dump(class_indices, f)
+#         print(f"Class indices saved to {os.path.join(MODEL_FOLDER, f'{dataset_folder_name}_{selected_model}_class_indices.json')}")
+
+#         flash(f'Model {selected_model} trained and saved successfully!')
+#         return redirect(url_for('test_model', dataset_folder_name=dataset_folder_name, model_name=selected_model))
+#     else:
+#         return render_template('select_model.html', models=AVAILABLE_MODELS.keys(), dataset=dataset_folder_name)
+
+
 @app.route('/select_model/<extract_folder_name>/<dataset_folder_name>', methods=['GET', 'POST'])
 def select_model(extract_folder_name, dataset_folder_name):
     """Allow the user to select a model and initiate training."""
@@ -141,7 +252,6 @@ def select_model(extract_folder_name, dataset_folder_name):
         selected_model = request.form.get('model')
         if selected_model not in AVAILABLE_MODELS:
             flash('Invalid model selected.')
-            print("Error: Invalid model selected.")
             return redirect(request.url)
 
         # Path to dataset folder
@@ -159,34 +269,29 @@ def select_model(extract_folder_name, dataset_folder_name):
         train_generator = train_datagen.flow_from_directory(
             dataset_dir,
             target_size=(224, 224),
-            batch_size=32,
-            class_mode='binary',
+            batch_size=8,
+            class_mode='categorical',
             subset='training'
         )
 
         validation_generator = train_datagen.flow_from_directory(
             dataset_dir,
             target_size=(224, 224),
-            batch_size=32,
-            class_mode='binary',
+            batch_size=8,
+            class_mode='categorical',
             subset='validation'
         )
 
-        # Check class distribution
-        distribution = check_class_distribution(dataset_dir)
-        print("Training Class Distribution:", distribution)
-        flash(f'Training Class Distribution: {distribution}')
+        num_classes = train_generator.num_classes
+        if num_classes <= 1:
+            flash("Dataset should contain at least two classes.")
+            return redirect(request.url)
 
-        # Calculate class weights to handle imbalance
-        classes = list(train_generator.class_indices.keys())
-        class_weights_calculated = class_weight.compute_class_weight(
-            'balanced',
-            classes=np.unique(train_generator.classes),
-            y=train_generator.classes
-        )
-        class_weights_dict = dict(enumerate(class_weights_calculated))
-        print("Class Weights:", class_weights_dict)
-        flash(f'Class Weights: {class_weights_dict}')
+        # Verify the structure of the data output by train_generator
+        for batch_data, batch_labels in train_generator:
+            print("Batch data shape:", batch_data.shape)
+            print("Batch labels shape:", batch_labels.shape)
+            break  # Only check the first batch
 
         # Build the Model
         base_model_class = AVAILABLE_MODELS[selected_model]
@@ -194,7 +299,7 @@ def select_model(extract_folder_name, dataset_folder_name):
         x = base_model.output
         x = GlobalAveragePooling2D()(x)
         x = Dense(1024, activation='relu')(x)
-        predictions = Dense(1, activation='sigmoid')(x)
+        predictions = Dense(num_classes, activation='softmax')(x)
 
         model = Model(inputs=base_model.input, outputs=predictions)
 
@@ -203,15 +308,14 @@ def select_model(extract_folder_name, dataset_folder_name):
             layer.trainable = False
 
         # Compile the Model
-        model.compile(optimizer=Adam(), loss='binary_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['accuracy'])
 
         # Train the Model
         try:
             model.fit(
                 train_generator,
-                epochs=2,
-                validation_data=validation_generator,
-                class_weight=class_weights_dict
+                epochs=4,
+                validation_data=validation_generator
             )
         except Exception as e:
             flash(f'Error during training: {str(e)}')
@@ -222,18 +326,18 @@ def select_model(extract_folder_name, dataset_folder_name):
         model_filename = f"{dataset_folder_name}_{selected_model}.h5"
         model_save_path = os.path.join(MODEL_FOLDER, model_filename)
         model.save(model_save_path)
-        print(f"Model saved to {model_save_path}")
 
         # Save class indices
         class_indices = train_generator.class_indices
         with open(os.path.join(MODEL_FOLDER, f"{dataset_folder_name}_{selected_model}_class_indices.json"), 'w') as f:
             json.dump(class_indices, f)
-        print(f"Class indices saved to {os.path.join(MODEL_FOLDER, f'{dataset_folder_name}_{selected_model}_class_indices.json')}")
 
         flash(f'Model {selected_model} trained and saved successfully!')
         return redirect(url_for('test_model', dataset_folder_name=dataset_folder_name, model_name=selected_model))
     else:
         return render_template('select_model.html', models=AVAILABLE_MODELS.keys(), dataset=dataset_folder_name)
+
+
 
 @app.route('/test_model/<dataset_folder_name>/<model_name>', methods=['GET', 'POST'])
 def test_model(dataset_folder_name, model_name):
@@ -291,19 +395,37 @@ def test_model(dataset_folder_name, model_name):
                 print(f"Error processing image: {str(e)}")
                 return redirect(request.url)
 
-            # Make Prediction
+            #Make Prediction
+            # try:
+            #     prediction = model.predict(img_array)
+            #     probability = prediction[0][0]
+            #     # Determine class based on probability and class mapping
+            #     threshold = 0.5  # You can adjust this threshold if needed
+            #     predicted_class = 1 if probability > threshold else 0
+            #     result = class_labels.get(predicted_class, "Unknown")
+            #     print(f"Prediction Probability: {probability:.4f}, Predicted Class: {result}")
+            # except Exception as e:
+            #     flash(f'Error during prediction: {str(e)}')
+            #     print(f"Error during prediction: {str(e)}")
+            #     return redirect(request.url)
+
             try:
                 prediction = model.predict(img_array)
-                probability = prediction[0][0]
-                # Determine class based on probability and class mapping
-                threshold = 0.5  # You can adjust this threshold if needed
-                predicted_class = 1 if probability > threshold else 0
-                result = class_labels.get(predicted_class, "Unknown")
+                predicted_class_index = np.argmax(prediction)
+                probability = prediction[0][predicted_class_index]
+                confidence_threshold = 0.7  # Adjust this threshold as needed
+
+                if probability < confidence_threshold:
+                    result = "Unknown"
+                else:
+                    result = class_labels.get(predicted_class_index, "Unknown")
+                
                 print(f"Prediction Probability: {probability:.4f}, Predicted Class: {result}")
             except Exception as e:
                 flash(f'Error during prediction: {str(e)}')
                 print(f"Error during prediction: {str(e)}")
-                return redirect(request.url)
+
+
 
             # Move the uploaded image to static folder for display
             static_test_upload_folder = os.path.join('static', 'test_uploads')
@@ -330,3 +452,5 @@ def uploaded_file(filename):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
