@@ -81,3 +81,8 @@ The files upload in the skin cancer folder are for detecting the skin cancer, th
 2. Melanoma
 3. Pigmented Benign Keratosis
 
+## Usage
+The folder interface has the code for the frontend page for uploading the image for detection, before are the attached images of frontend
+![Screenshot 2024-11-10 180706](https://github.com/user-attachments/assets/eb2153b4-fcf5-429b-b4e3-acfcca92c922)
+
+
