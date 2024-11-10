@@ -73,3 +73,11 @@ This will start the Flask server, and the application will be accessible via htt
 3. InceptionV3
 
 
+
+
+# Skin Cancer Detection Model
+The files upload in the skin cancer folder are for detecting the skin cancer, the model has been trained on mobile net v2 architecture and currently diagnosis three types of skin cancer namely
+1. Nevus
+2. Melanoma
+3. Pigmented Benign Keratosis
+
