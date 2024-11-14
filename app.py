@@ -175,7 +175,7 @@ def select_model(dataset_folder_name):
         # Train Model with more epochs
         model.fit(
             train_generator,
-            epochs=5,  # Increased epochs for better learning
+            epochs=1,  # Increased epochs for better learning
             validation_data=validation_generator
         )
 
