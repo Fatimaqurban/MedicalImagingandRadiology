@@ -10,6 +10,10 @@ from tensorflow.keras.applications import MobileNetV2, ResNet50, InceptionV3
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from tensorflow.keras.optimizers import Adam
+from transformers import AutoImageProcessor, AutoModelForImageClassification,AutoFeatureExtractor
+from PIL import Image
+import torch
+import io
 import numpy as np
 
 app = Flask(__name__)
@@ -275,6 +279,62 @@ def test_model(dataset_folder_name, model_name):
         }), 200
     else:
         return jsonify({'error': 'Allowed image types are png, jpg, jpeg.'}), 400
+    
+
+#eye disease
+processor = AutoImageProcessor.from_pretrained("NeuronZero/EyeDiseaseClassifier")
+model = AutoModelForImageClassification.from_pretrained("NeuronZero/EyeDiseaseClassifier")
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    image = Image.open(file.stream)
+
+    inputs = processor(images=image, return_tensors="pt")
+    with torch.no_grad():
+        outputs = model(**inputs)
+    logits = outputs.logits
+    predicted_class_idx = logits.argmax(-1).item()
+    predicted_class = model.config.id2label[predicted_class_idx]
+
+    return jsonify({'predicted_class': predicted_class})
+
+
+
+# Load the model and processor
+processor = AutoFeatureExtractor.from_pretrained("gianlab/swin-tiny-patch4-window7-224-finetuned-lungs-disease")
+model = AutoModelForImageClassification.from_pretrained("gianlab/swin-tiny-patch4-window7-224-finetuned-lungs-disease")
+
+@app.route('/predict-lung-disease', methods=['POST'])
+def predict_lung_disease():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    try:
+        # Load the image
+        file = request.files['file']
+        image = Image.open(file.stream)
+
+        # Preprocess the image
+        inputs = processor(images=image, return_tensors="pt")
+
+        # Perform inference
+        with torch.no_grad():
+            outputs = model(**inputs)
+        logits = outputs.logits
+        predicted_class_idx = logits.argmax(-1).item()
+        predicted_class = model.config.id2label[predicted_class_idx]
+
+        return jsonify({'predicted_class': predicted_class})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
