@@ -2,15 +2,18 @@
 
 This project implements a web-based application for training and testing deep learning models on medical imaging data. It allows users to upload a dataset, train a model, and test the model's predictions on new images.
 
+
+
 <!--## Project Structure
 
 The application is organized into the following directory structure:
 medical_imaging_app/
    ├── app.py # Main Flask application file 
-   ├── templates/ # HTML templates for the web interface
-      ├── index.html  
-      ├── select_model.html 
-      └── test_model.html 
+   ├── frontend
+      ├── src
+         ├── pages
+             ├── ML_UI.js
+             └── TrainedModels.js
    ├── uploads/ # Directory for uploaded zip files 
    ├── extracted/ # Directory for extracted datasets 
    ├── models/ # Directory for trained model files 
@@ -34,14 +37,17 @@ To set up the project, follow these steps:
    git clone https://github.com/Fatimaqurban/MedicalImagingandRadiology.git
    cd medical_imaging_app
 2. **Install Required Packages:**
-   pip install flask tensorflow werkzeug
+   pip install flask  flask-cors tensorflow werkzeug transformers tailwind torch numpy pillow torchvision react-router-dom lucide-react axios
 
 ## Usage
-Running the Application
-To run the application, execute the following command from the root of the project directory:
+Running the Application (run the below commands simultaneously)
+To run the  backend, execute the following command from the root of the project directory:
   python app.py
 
-This will start the Flask server, and the application will be accessible via http://127.0.0.1:5000/ on your browser.
+To run the frontend, execute the following command from the frontend directory for running the of the root folder:
+  npm start
+
+
 
 ## Using the Application
 1. **Upload Dataset:**
