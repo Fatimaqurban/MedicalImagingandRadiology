@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Camera, CheckCircle, XCircle, Loader, Upload, Brain, FileQuestion, ArrowRight, FolderTree, Home, Settings, Database, HelpCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const MachineLearningApp = () => {
   const [file, setFile] = useState(null);
@@ -18,6 +19,7 @@ const MachineLearningApp = () => {
   const [fileName, setFileName] = useState('');
   const [testFileName, setTestFileName] = useState('');
   const [isTraining, setIsTraining] = useState(false);
+  const navigate = useNavigate();
 
   const handleFileSelect = (e) => {
     const uploadedFile = e.target.files[0];
@@ -124,7 +126,7 @@ const MachineLearningApp = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-16 px-4">
       
-      <nav className="bg-white shadow-md">
+      <nav className="bg-white shadow-md fixed top-0 left-0 right-0 z-50">
   <div className="max-w-7xl mx-auto px-6"> {/* Add padding here for spacing */}
     <div className="flex justify-between items-center h-20"> {/* Adjust height for better alignment */}
       {/* Logo */}
@@ -138,7 +140,10 @@ const MachineLearningApp = () => {
         <button className="px-5 py-2 text-gray-600 hover:text-gray-800 focus:outline-none">
           Home
         </button>
-        <button className="px-5 py-2 text-gray-600 hover:text-gray-800 focus:outline-none">
+        <button 
+          onClick={() => navigate('/pretrainedModels')} 
+          className="px-5 py-2 text-gray-600 hover:text-gray-800 focus:outline-none"
+        >
           Trained Models
         </button>
         <button className="px-5 py-2 text-gray-600 hover:text-gray-800 focus:outline-none">
