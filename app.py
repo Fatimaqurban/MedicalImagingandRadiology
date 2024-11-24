@@ -196,15 +196,18 @@ def merge_datasets(src_dir, dest_dir):
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
+        app.logger.error('No file part in the request.')
         return jsonify({'error': 'No file part in the request.'}), 400
 
     file = request.files['file']
     disease_category = request.form.get('disease_category')
 
     if not disease_category or disease_category not in DISEASE_CATEGORIES:
+        app
         return jsonify({'error': 'Invalid or missing disease category.'}), 400
 
     if file.filename == '':
+        app.logger.error('No file selected for uploading.')
         return jsonify({'error': 'No file selected for uploading.'}), 400
 
     if file and allowed_file(file.filename):
