@@ -156,11 +156,14 @@ const MachineLearningApp = () => {
 
     try {
       await axios.post(
-        `http://127.0.0.1:5000/select-model/${datasetFolderName}`,
+        `http://127.0.0.1:5000/select-model`,
         {
           model: selectedModel,
           disease_category: selectedCategory,
           updated_classes: updatedClasses,
+          new_classes: newClasses,
+          extract_folder_name: extractFolderName,
+          dataset_folder_name: datasetFolderName,
         },
         { headers: { "Content-Type": "application/json" } }
       );

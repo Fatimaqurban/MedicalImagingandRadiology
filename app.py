@@ -5,7 +5,7 @@ import zipfile
 import json
 import glob
 import numpy as np
-import tensorflow as tf
+import shutil
 from io import BytesIO
 from tensorflow import keras
 from tensorflow.keras import models, layers, optimizers
@@ -26,14 +26,15 @@ app.secret_key = 'your_secret_key'
 # Configuration
 UPLOAD_FOLDER = 'uploads'
 EXTRACT_FOLDER = 'extracted'
-MODEL_FOLDER = 'models'
+MODEL_FOLDER = '.'  # Models are in the root directory
 TEST_UPLOAD_FOLDER = 'test_uploads'
+DATASET_FOLDER = 'datasets'  # New folder to store combined datasets
 ALLOWED_EXTENSIONS = {'zip'}
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Ensure necessary directories exist
-for folder in [UPLOAD_FOLDER, EXTRACT_FOLDER, MODEL_FOLDER, TEST_UPLOAD_FOLDER]:
+for folder in [UPLOAD_FOLDER, EXTRACT_FOLDER, TEST_UPLOAD_FOLDER, DATASET_FOLDER]:
     os.makedirs(folder, exist_ok=True)
 
 AVAILABLE_MODELS = {
@@ -96,7 +97,7 @@ def get_existing_model(disease_category):
         return pretrained_model_path
     # Else, check in models folder
     model_files = glob.glob(
-        os.path.join(MODEL_FOLDER, f"{disease_category}_Model_v*.h5"))
+        os.path.join(MODEL_FOLDER, f"{disease_category.replace(' ', '')}_Model.h5"))
     if model_files:
         latest_model = max(model_files, key=os.path.getctime)
         return latest_model
@@ -123,7 +124,7 @@ def get_disease_category_from_model_path(model_path):
     return None
 
 def update_model_for_new_classes(model, old_num_classes, new_num_classes):
-    # Freeze all layers except the last few
+    # Freeze all layers except the last one
     for layer in model.layers[:-1]:
         layer.trainable = False
     # Replace the last Dense layer with a new one
@@ -178,6 +179,19 @@ def update_disease_config(disease_category, new_classes):
     # Save to disease_config.py
     with open('disease_config.py', 'w') as f:
         f.write(f'DISEASE_CATEGORIES = {json.dumps(DISEASE_CATEGORIES)}')
+
+def merge_datasets(src_dir, dest_dir):
+    # Iterate over classes in src_dir
+    for class_name in os.listdir(src_dir):
+        src_class_dir = os.path.join(src_dir, class_name)
+        dest_class_dir = os.path.join(dest_dir, class_name)
+        os.makedirs(dest_class_dir, exist_ok=True)
+        # Copy images from src_class_dir to dest_class_dir
+        for img_name in os.listdir(src_class_dir):
+            src_img_path = os.path.join(src_class_dir, img_name)
+            dest_img_path = os.path.join(dest_class_dir, img_name)
+            if not os.path.exists(dest_img_path):
+                shutil.copy(src_img_path, dest_img_path)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -249,12 +263,19 @@ def upload_file():
 
         # Proceed with training
         updated_classes = existing_classes + new_classes
+
+        # Merge the new dataset into the existing dataset
+        disease_dataset_dir = os.path.join(DATASET_FOLDER, disease_category)
+        os.makedirs(disease_dataset_dir, exist_ok=True)
+        merge_datasets(dataset_dir, disease_dataset_dir)
+
+        # Update disease_config
+        update_disease_config(disease_category, new_classes)
+
         # Return JSON response with class distribution and other info
         return jsonify({
             'message': 'File successfully uploaded and extracted.',
             'class_distribution': class_mapping,
-            'extract_folder_name': extract_folder_name,
-            'dataset_folder_name': dataset_folder_name,
             'disease_category': disease_category,
             'updated_classes': updated_classes,
             'new_classes': new_classes,
@@ -263,8 +284,8 @@ def upload_file():
 
     return jsonify({'error': 'Allowed file type is zip.'}), 400
 
-@app.route('/select-model/<dataset_folder_name>', methods=['POST'])
-def select_model(dataset_folder_name):
+@app.route('/select-model', methods=['POST'])
+def select_model():
     data = request.get_json()
     selected_model = data.get('model')
     disease_category = data.get('disease_category')
@@ -278,13 +299,16 @@ def select_model(dataset_folder_name):
         return jsonify({"error": "Invalid model selected."}), 400
 
     # Get existing classes from disease_config.py
-    existing_classes = DISEASE_CATEGORIES.get(disease_category, [])
+    all_classes = DISEASE_CATEGORIES.get(disease_category, [])
 
-    # Combine existing classes and new classes
-    all_classes = existing_classes + [cls for cls in new_classes if cls not in existing_classes]
+    # Path to combined dataset folder
+    dataset_dir = os.path.join(DATASET_FOLDER, disease_category)
 
-    # Path to dataset folder
-    dataset_dir = os.path.join(EXTRACT_FOLDER, dataset_folder_name)
+    if not os.path.exists(dataset_dir):
+        return jsonify({'error': 'Dataset directory not found.'}), 400
+
+    print(f"Dataset directory: {dataset_dir}")
+    print(f"Classes in dataset: {os.listdir(dataset_dir)}")
 
     # Data Generators with minimal augmentation
     train_datagen = ImageDataGenerator(
@@ -302,7 +326,7 @@ def select_model(dataset_folder_name):
         batch_size=32,
         class_mode='categorical',
         subset='training',
-        classes=all_classes  # Use all classes
+        classes=all_classes
     )
 
     validation_generator = train_datagen.flow_from_directory(
@@ -311,10 +335,12 @@ def select_model(dataset_folder_name):
         batch_size=32,
         class_mode='categorical',
         subset='validation',
-        classes=all_classes  # Use all classes
+        classes=all_classes
     )
 
-    num_classes = len(all_classes)
+    num_classes = len(train_generator.class_indices)
+    print(f"Number of classes: {num_classes}")
+    print(f"Class indices: {train_generator.class_indices}")
 
     # Check for existing model
     model_path = get_existing_model(disease_category)
@@ -322,8 +348,10 @@ def select_model(dataset_folder_name):
         # Load existing model
         model = models.load_model(model_path)
         # Update model for new classes
-        model = update_model_for_new_classes(
-            model, model.output_shape[-1], num_classes)
+        old_num_classes = model.output_shape[-1]
+        if old_num_classes != num_classes:
+            model = update_model_for_new_classes(
+                model, old_num_classes, num_classes)
     else:
         # Build new model
         base_model_class = AVAILABLE_MODELS[selected_model]
@@ -345,30 +373,22 @@ def select_model(dataset_folder_name):
     # Train model
     model.fit(
         train_generator,
-        epochs=5,  # Adjust as needed
+        epochs=10,  # Adjust as needed
         validation_data=validation_generator
     )
 
     # Save model
-    version = 1
     model_save_path = os.path.join(
-        MODEL_FOLDER, f"{disease_category}_Model_v{version}.h5")
-    while os.path.exists(model_save_path):
-        version += 1
-        model_save_path = os.path.join(
-            MODEL_FOLDER, f"{disease_category}_Model_v{version}.h5")
+        MODEL_FOLDER, f"{disease_category.replace(' ', '')}_Model.h5")
     model.save(model_save_path)
 
     # Save class indices
     class_indices = train_generator.class_indices
     # Invert class_indices to map indices to class names
-    class_indices = {v: k for k, v in class_indices.items()}
+    class_indices_inverted = {v: k for k, v in class_indices.items()}
     class_indices_path = model_save_path.replace('.h5', '_class_indices.json')
     with open(class_indices_path, 'w') as f:
-        json.dump(class_indices, f)
-
-    # Update disease_config
-    update_disease_config(disease_category, new_classes)
+        json.dump(class_indices_inverted, f)
 
     return jsonify({"message": f"Model {selected_model} trained and saved "
                                f"successfully!"}), 200
@@ -393,7 +413,7 @@ def predict():
     # Load model and class indices
     model, class_indices = load_model_and_classes(model_path)
     # Reverse class indices
-    class_labels = {int(v): k for k, v in class_indices.items()}
+    class_labels = {int(k): v for k, v in class_indices.items()}
 
     # Preprocess image
     img_height, img_width = model.input_shape[1], model.input_shape[2]
@@ -441,7 +461,7 @@ def pretrained_models_predict():
     # Load model and class indices
     model, class_indices = load_model_and_classes(model_path)
     # Reverse class indices
-    class_labels = {int(v): k for k, v in class_indices.items()}
+    class_labels = {int(k): v for k, v in class_indices.items()}
 
     # Preprocess image
     img_height, img_width = model.input_shape[1], model.input_shape[2]
