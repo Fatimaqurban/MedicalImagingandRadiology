@@ -351,13 +351,68 @@ const MachineLearningApp = () => {
           >
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <h2 className="text-3xl font-bold text-gray-800 mb-6">
-                Upload Your Dataset
+                Train Your Medical Imaging Model
               </h2>
 
-              {/* Disease Category Selection */}
+              {/* Welcome Information Cards */}
+              <div className="grid md:grid-cols-2 gap-6 mb-8">
+                <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-100">
+                  <Brain className="w-8 h-8 text-emerald-500 mb-4" />
+                  <h3 className="text-lg font-semibold text-emerald-700 mb-2">
+                    Using Pre-trained Models
+                  </h3>
+                  <p className="text-emerald-600 text-sm mb-4">
+                    If your disease category is already in our system, you can directly use our trained models for predictions.
+                  </p>
+                  <button
+                    onClick={() => navigate("/pretrainedModels")}
+                    className="text-emerald-600 hover:text-emerald-700 text-sm font-medium flex items-center gap-2"
+                  >
+                    Go to Trained Models <ArrowRight size={16} />
+                  </button>
+                </div>
+
+                <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
+                  <Upload className="w-8 h-8 text-blue-500 mb-4" />
+                  <h3 className="text-lg font-semibold text-blue-700 mb-2">
+                    Training New Models
+                  </h3>
+                  <p className="text-blue-600 text-sm">
+                    Train models for new disease categories or enhance existing ones with your dataset.
+                  </p>
+                </div>
+              </div>
+
+              {/* Instructions Section */}
+              <div className="bg-gray-50 rounded-xl p-6 mb-8">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  How to Proceed:
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      1
+                    </div>
+                    <p className="text-gray-600">
+                      <span className="font-medium">Check Existing Categories:</span> First, check if your disease category already exists in the dropdown below.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      2
+                    </div>
+                    <p className="text-gray-600">
+                      <span className="font-medium">If Category Exists:</span> You can either use our pre-trained models directly or enhance them with additional data.
+                    </p>
+                  </div>
+    
+                </div>
+              </div>
+
+              {/* Existing Disease Category Selection */}
               <div className="mb-6">
                 <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Select Disease Category:
+                  Select Existing Disease Category (if applicable):
                 </label>
                 <select
                   value={selectedCategory}
