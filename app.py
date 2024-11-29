@@ -47,7 +47,9 @@ AVAILABLE_MODELS = {
 PRETRAINED_MODEL_PATHS = {
     'Brain Tumor': 'BrainTumor_model.h5',
     'Eye Disease': 'EyeDisease_model.h5',
-    'Lung Disease': 'LungDisease_model.h5'
+    'Lung Disease': 'LungDisease_model.h5',
+    'Skin Disease': 'my_model5.keras'  # Add this line
+
 }
 
 def allowed_file(filename):
@@ -75,7 +77,9 @@ def get_model_classes():
 
     model_path = get_existing_model(disease_category)
     if model_path:
-        class_indices_path = model_path.replace('.h5', '_class_indices.json')
+        class_indices_path = (model_path.replace('.h5', '_class_indices.json') 
+                     if model_path.endswith('.h5') 
+                     else model_path.replace('.keras', '_class_indices.json'))
         if os.path.exists(class_indices_path):
             with open(class_indices_path, 'r') as f:
                 class_indices = json.load(f)
@@ -95,25 +99,41 @@ def get_existing_model(disease_category):
     pretrained_model_path = PRETRAINED_MODEL_PATHS.get(disease_category)
     if pretrained_model_path and os.path.exists(pretrained_model_path):
         return pretrained_model_path
-    # Else, check in models folder
-    model_files = glob.glob(
+        
+    # Check for both .h5 and .keras models in models folder
+    model_files_h5 = glob.glob(
         os.path.join(MODEL_FOLDER, f"{disease_category.replace(' ', '')}_Model.h5"))
+    model_files_keras = glob.glob(
+        os.path.join(MODEL_FOLDER, f"{disease_category.replace(' ', '')}_Model.keras"))
+    
+    # Combine both lists of model files
+    model_files = model_files_h5 + model_files_keras
+    
     if model_files:
+        # Get the most recently modified model file
         latest_model = max(model_files, key=os.path.getctime)
         return latest_model
+        
     return None
 
 def load_model_and_classes(model_path):
     model = models.load_model(model_path)
-    class_indices_path = model_path.replace('.h5', '_class_indices.json')
-    if os.path.exists(class_indices_path):
-        with open(class_indices_path, 'r') as f:
-            class_indices = json.load(f)
+    if model_path.endswith('.keras'):
+        # Hardcoded classes for skin disease model
+        class_indices = {
+            '0': 'melanoma',
+            '1': 'nevus',
+            '2': 'pigmented benign keratosis'
+        }
     else:
-        # Use disease_config.py as fallback
-        disease_category = get_disease_category_from_model_path(model_path)
-        class_indices = {cls: idx for idx, cls in enumerate(
-            DISEASE_CATEGORIES.get(disease_category, []))}
+        class_indices_path = model_path.replace('.h5', '_class_indices.json')
+        if os.path.exists(class_indices_path):
+            with open(class_indices_path, 'r') as f:
+                class_indices = json.load(f)
+        else:
+            disease_category = get_disease_category_from_model_path(model_path)
+            class_indices = {str(idx): cls for idx, cls in enumerate(
+                DISEASE_CATEGORIES.get(disease_category, []))}
     return model, class_indices
 
 def get_disease_category_from_model_path(model_path):
@@ -478,7 +498,7 @@ def pretrained_models_predict():
     file.stream.seek(0)
 
     input_arr = keras.preprocessing.image.img_to_array(image)
-    input_arr = np.array([input_arr])  # Convert single image to a batch.
+    input_arr = np.array([input_arr])  # Convert single image to a batch
     input_arr = input_arr / 255.0
 
     # Make prediction
@@ -502,21 +522,31 @@ def check_existing_model():
 
     model_path = get_existing_model(disease_category)
     if model_path:
-        class_indices_path = model_path.replace('.h5', '_class_indices.json')
+        # Handle both .h5 and .keras model formats
+        if model_path.endswith('.h5'):
+            class_indices_path = model_path.replace('.h5', '_class_indices.json')
+        else:  # .keras format
+            class_indices_path = model_path.replace('.keras', '_class_indices.json')
+            
         if os.path.exists(class_indices_path):
             with open(class_indices_path, 'r') as f:
                 class_indices = json.load(f)
             classes = [value for key, value in class_indices.items()]
-            return jsonify({'model_name': os.path.basename(model_path),
-                            'classes': classes}), 200
+            return jsonify({
+                'model_name': os.path.basename(model_path),
+                'classes': classes
+            }), 200
         else:
             # Use disease_config.py as fallback
             classes = DISEASE_CATEGORIES.get(disease_category, [])
-            return jsonify({'model_name': os.path.basename(model_path),
-                            'classes': classes}), 200
+            return jsonify({
+                'model_name': os.path.basename(model_path),
+                'classes': classes
+            }), 200
     else:
-        return jsonify({'message': 'No model found for the selected '
-                                   'category.'}), 404
-
+        return jsonify({
+            'message': 'No model found for the selected category.'
+        }), 404
+    
 if __name__ == '__main__':
     app.run(debug=True)

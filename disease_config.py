@@ -1,1 +1,1 @@
-DISEASE_CATEGORIES = {"Eye Disease": ["Normal", "cataract", "diabetic_retinopathy", "glaucoma"], "Lung Disease": ["Normal", "Corona_Virus_Disease", "Tuberculosis", "Viral_Pneumonia"], "Brain Tumor": ["No Tumor", "glioma", "meningioma", "pituitary"]}
+DISEASE_CATEGORIES = {"Eye Disease": ["Normal", "cataract", "diabetic_retinopathy", "glaucoma"], "Lung Disease": ["Normal", "Corona_Virus_Disease", "Tuberculosis", "Viral_Pneumonia"], "Brain Tumor": ["No Tumor", "glioma", "meningioma", "pituitary"], "Skin Disease": ["melanoma", "nevus", "pigmented benign keratosis"]}
