@@ -7,4 +7,3 @@ tensorflow-hub
 keras
 Pillow
 scikit-learn
-difflib
