@@ -23,7 +23,21 @@ const Trained_model = () => {
     axios
       .get("http://127.0.0.1:5000/get-disease-categories")
       .then((response) => {
-        setDiseaseCategories(response.data);
+        // Transform the data to include descriptions
+        const categoriesWithDetails = Object.entries(response.data).reduce((acc, [category, classes]) => {
+          acc[category] = {
+            description: getCategoryDescription(category),
+            classes: classes.reduce((classAcc, className) => {
+              classAcc[className] = {
+                description: getClassDescription(category, className),
+                symptoms: getSymptoms(category, className)
+              };
+              return classAcc;
+            }, {})
+          };
+          return acc;
+        }, {});
+        setDiseaseCategories(categoriesWithDetails);
       })
       .catch((error) => {
         console.error("Error fetching disease categories:", error);
@@ -114,6 +128,58 @@ const Trained_model = () => {
     }
   };
 
+  // Helper functions to provide descriptions
+  const getCategoryDescription = (category) => {
+    const descriptions = {
+      "Eye Disease": "Comprehensive analysis of various eye conditions including cataracts, diabetic retinopathy, and glaucoma.",
+      "Lung Disease": "Detection of respiratory conditions including COVID-19, tuberculosis, and viral pneumonia.",
+      "Brain Tumor": "Identification of different types of brain tumors through medical imaging.",
+      "Skin Disease": "Analysis of skin conditions and potential malignancies."
+    };
+    return descriptions[category] || `Analysis of ${category} conditions`;
+  };
+
+  const getClassDescription = (category, className) => {
+    const descriptions = {
+      "Eye Disease": {
+        "Normal": "Healthy eye with no detected abnormalities",
+        "cataract": "Clouding of the eye's natural lens that affects vision",
+        "diabetic_retinopathy": "Diabetes-related damage to blood vessels in the retina",
+        "glaucoma": "Eye condition that damages the optic nerve, often due to high pressure"
+      },
+      "Lung Disease": {
+        "Normal": "Healthy lung tissue with no detected abnormalities",
+        "Corona_Virus_Disease": "COVID-19 infection affecting the respiratory system",
+        "Tuberculosis": "Bacterial infection primarily affecting the lungs",
+        "Viral_Pneumonia": "Viral infection causing inflammation of the air sacs in the lungs"
+      },
+      "Brain Tumor": {
+        "No Tumor": "Normal brain tissue with no detected tumors",
+        "glioma": "Tumor that starts in the glial cells of the brain",
+        "meningioma": "Tumor that forms in the meninges, the brain's protective membranes",
+        "pituitary": "Tumor that develops in the pituitary gland"
+      },
+      "Skin Disease": {
+        "melanoma": "Serious form of skin cancer that develops in melanocytes",
+        "nevus": "Common mole or birthmark (usually benign)",
+        "pigmented benign keratosis": "Non-cancerous growth on the skin's surface"
+      }
+    };
+    return descriptions[category]?.[className] || `${className} in ${category}`;
+  };
+
+  const getSymptoms = (category, className) => {
+    const symptoms = {
+      "Eye Disease": {
+        "cataract": ["Blurred vision", "Light sensitivity", "Poor night vision", "Fading colors"],
+        "diabetic_retinopathy": ["Blurred vision", "Dark spots", "Vision loss", "Eye pain"],
+        "glaucoma": ["Vision loss", "Eye pain", "Headaches", "Rainbow halos around lights"]
+      },
+      // Add symptoms for other categories as needed
+    };
+    return symptoms[category]?.[className] || [];
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Navigation */}
@@ -121,7 +187,10 @@ const Trained_model = () => {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
-            <div className="flex items-center space-x-3">
+            <div 
+              onClick={() => navigate("/")} 
+              className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
+            >
               <Brain className="h-8 w-8 text-emerald-500" />
               <span className="text-xl font-bold text-gray-800">
                 Medical Imaging
@@ -137,9 +206,7 @@ const Trained_model = () => {
                 Home
               </button>
 
-              <button className="px-5 py-2 text-gray-600 hover:text-gray-800 focus:outline-none">
-                Settings
-              </button>
+
             </div>
 
             {/* Mobile Menu Button */}
@@ -244,7 +311,7 @@ const Trained_model = () => {
                 {modelExists && existingClasses.length > 0 && (
                   <div>
                     <h4 className="text-lg font-semibold text-gray-700 mb-3">
-                      Trainable Classes:
+                      Available Classes:
                     </h4>
                     <div className="grid md:grid-cols-2 gap-4">
                       {existingClasses.map((cls) => (
@@ -254,13 +321,23 @@ const Trained_model = () => {
                         >
                           <h5 className="font-medium text-gray-800 mb-2">{cls}</h5>
                           <p className="text-gray-600 text-sm">
-                            {selectedCategoryDetails.classes?.[cls] || 'No additional description available.'}
+                            {selectedCategoryDetails.classes[cls].description}
                           </p>
+                          {selectedCategoryDetails.classes[cls].symptoms?.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-sm font-medium text-gray-700">Common Symptoms:</p>
+                              <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
+                                {selectedCategoryDetails.classes[cls].symptoms.map((symptom, index) => (
+                                  <li key={index}>{symptom}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
                   </div>
-                )}
+                )}    
 
                 {!modelExists && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-4">
