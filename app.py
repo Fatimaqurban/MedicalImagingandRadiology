@@ -460,6 +460,8 @@ def predict():
 
     # Optionally, get probability/confidence
     confidence = float(np.max(predictions[0]))
+    if confidence < 0.6:
+        predicted_class_label = 'Image could not be identified'
 
     return jsonify({'predicted_class': predicted_class_label,
                     'confidence': confidence}), 200
@@ -508,6 +510,8 @@ def pretrained_models_predict():
 
     # Optionally, get probability/confidence
     confidence = float(np.max(predictions[0]))
+    if confidence < 0.6:
+        predicted_class_label = 'Image could not be identified'
 
     return jsonify({'predicted_class': predicted_class_label,
                     'confidence': confidence}), 200
