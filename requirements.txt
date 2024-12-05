@@ -1,0 +1,10 @@
+flask
+flask-cors
+werkzeug
+numpy
+tensorflow
+tensorflow-hub
+keras
+Pillow
+scikit-learn
+difflib
