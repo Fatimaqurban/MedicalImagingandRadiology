@@ -25,12 +25,22 @@ jobs:
           username: abdullahdaniyal1234
           password: superflies2026
 
-      # Build the Docker image
-      - name: Build Docker Image
+      # Build the backend Docker image
+      - name: Build Backend Docker Image
         run: |
-          docker build -t abdullahdaniyal1234/medical-imaging-app:latest .
+          docker build -t abdullahdaniyal1234/medical-imaging-backend:latest .
 
-      # Push the Docker image to Docker Hub
-      - name: Push Docker Image to Docker Hub
+      # Build the frontend Docker image
+      - name: Build Frontend Docker Image
         run: |
-          docker push abdullahdaniyal1234/medical-imaging-app:latest
+          docker build -f frontend/Dockerfile -t abdullahdaniyal1234/medical-imaging-frontend:latest ./frontend
+
+      # Push the backend Docker image to Docker Hub
+      - name: Push Backend Docker Image to Docker Hub
+        run: |
+          docker push abdullahdaniyal1234/medical-imaging-backend:latest
+
+      # Push the frontend Docker image to Docker Hub
+      - name: Push Frontend Docker Image to Docker Hub
+        run: |
+          docker push abdullahdaniyal1234/medical-imaging-frontend:latest
