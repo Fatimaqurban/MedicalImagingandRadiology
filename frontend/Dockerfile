@@ -5,13 +5,13 @@ FROM node:22.12.0
 WORKDIR /frontend
 
 # Copy the package.json and package-lock.json
-COPY ./frontend/package.json ./frontend/package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json ./
 
 # Install the React dependencies
 RUN npm install
 
 # Copy the rest of the React app's source code
-COPY ./frontend /frontend
+COPY frontend /frontend
 
 # Build the React app
 RUN npm run build

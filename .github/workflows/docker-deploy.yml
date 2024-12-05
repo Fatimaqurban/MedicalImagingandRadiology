@@ -34,7 +34,7 @@ jobs:
       - name: Build Frontend Docker Image
         run: |
           docker build -f frontend/Dockerfile -t abdullahdaniyal1234/medical-imaging-frontend:latest ./frontend
-
+          
       # Push the backend Docker image to Docker Hub
       - name: Push Backend Docker Image to Docker Hub
         run: |
