@@ -193,7 +193,7 @@ const Trained_model = () => {
             >
               <Brain className="h-8 w-8 text-emerald-500" />
               <span className="text-xl font-bold text-gray-800">
-                Medical Imaging
+              Health<span className="highlight">Care</span>
               </span>
             </div>
 
