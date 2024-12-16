@@ -116,3 +116,6 @@ desktop.ini
 *.log
 
 # Ignore any additional files or folders you don't want to track
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
